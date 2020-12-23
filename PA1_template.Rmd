@@ -8,17 +8,142 @@ output:
 
 ## Loading and preprocessing the data
 
+```{r}
 
+dfActivity <- read.table(unz("activity.zip", "activity.csv"), header=TRUE, sep=',')
+print(head(dfActivity))
+
+
+```
 
 ## What is mean total number of steps taken per day?
+
+```{r}
+
+dfTotalbyDay = aggregate(dfActivity$steps, by=list(dfActivity$date), FUN=sum)
+
+h <- hist(dfTotalbyDay$x,
+                        breaks = 10, 
+                        main='Total Steps per Day', 
+                        xlim=c(0,25000),
+                        ylim=c(0,20),
+                        col='cornsilk', 
+                        xlab='Step', 
+                        ylab='Frequency'
+                   )
+
+text(h$mids,h$counts,labels=h$counts, adj=c(0.5, -0.5))
+
+
+```
+
+
+```{r}
+mean_totalsteps = mean(dfTotalbyDay$x, na.rm = TRUE )
+median_totalsteps = median(dfTotalbyDay$x, na.rm = TRUE )
+
+sprintf("Mean total steps: %s", format(mean_totalsteps,big.mark=",",scientific=FALSE))
+sprintf("Median total steps: %s", format(median_totalsteps,big.mark=",",scientific=FALSE))
+```
+
 
 
 
 ## What is the average daily activity pattern?
 
+```{r}
+dfDailyActivity = aggregate(dfActivity$steps, 
+                            by=list(dfActivity$interval), 
+                            FUN=mean,
+                            na.rm=TRUE)
 
+plot(dfDailyActivity, type='l')
+                            
+```
+
+
+Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+```{r}
+interval = dfDailyActivity[ which.max(dfDailyActivity$x), 1]
+
+sprintf("5 min interval with maxium steps: %d", interval)
+
+```
 
 ## Imputing missing values
+
+
+Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+
+```{r}
+count = sum(is.na(dfActivity$steps))
+
+sprintf("Number of missing step values: %d", count)
+```
+
+
+Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+Create a new dataset that is equal to the original dataset but with the missing data filled in.
+
+```{r}
+
+# Use average daily steps in an interval (across all days) as a replacement 
+# for NA
+dfReplacement <- setNames( aggregate(dfActivity$steps, 
+                                     by=list(dfActivity$interval), 
+                                     FUN=mean,
+                                     na.rm=TRUE),
+                           c("interval", "aveSteps"))
+
+# Create a new dataframe and replace NA values
+dfActivityNoNA <- dfActivity
+
+sprintf("Number of NA Before:  %d", sum(is.na(dfActivityNoNA$steps)))
+
+for(i in 1:nrow(dfActivityNoNA)) {       # for-loop over rows
+     if (is.na(dfActivityNoNA[i, 1])) {  # if step value a row i is NA
+          # Replacement value is the aveSteps in dfReplacement 
+          # for the interval value found in DfActivityNoNA
+          replacement_value <- dfReplacement[dfReplacement$interval == dfActivityNoNA[i,3], 2]
+          dfActivityNoNA[i,1] <- replacement_value
+     }
+}
+sprintf("Number of NA After:  %d", sum(is.na(dfActivityNoNA$steps)))
+
+```
+
+Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+
+```{r}
+
+dfTotalbyDayNoNA = aggregate(dfActivityNoNA$steps, by=list(dfActivityNoNA$date), FUN=sum)
+
+h2 <- hist(dfTotalbyDayNoNA$x,
+                            breaks = 10, 
+                            main='Total Steps per Day with Imputed Missing Values', 
+                            xlim=c(0,25000),
+                            ylim=c(0,25),
+                            col='darkseagreen3', 
+                            xlab='Step', 
+                            ylab='Frequency'
+                     )
+
+text(h2$mids,h2$counts,labels=h2$counts, adj=c(0.5, -0.5))
+
+
+mean_totalstepsNoNA = mean(dfTotalbyDayNoNA$x)
+median_totalstepsNoNA = median(dfTotalbyDayNoNA$x)
+
+sprintf("Mean total steps (with imputed missing values): %s", 
+            format(mean_totalstepsNoNA,big.mark=",",scientific=FALSE))
+sprintf("Median total steps (with imputed missing values): %s", 
+            format(median_totalstepsNoNA,big.mark=",",scientific=FALSE))
+
+```
+
 
 
 
