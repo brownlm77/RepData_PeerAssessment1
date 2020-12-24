@@ -20,27 +20,34 @@ print(head(dfActivity))
 
 ```{r}
 
-dfTotalbyDay = aggregate(dfActivity$steps, by=list(dfActivity$date), FUN=sum)
+dfTotalbyDay = setNames(aggregate(dfActivity$steps, by=list(dfActivity$date), FUN=sum),
+                        c("date", "totalSteps")
+                        )
 
-h <- hist(dfTotalbyDay$x,
+
+print(dfTotalbyDay)
+sprintf("Total steps: %d, Number days not NA: %d", sum(dfTotalbyDay$totalSteps, na.rm = TRUE), 
+                                                  sum(!is.na(dfTotalbyDay$totalSteps)))
+
+h1 <- hist(dfTotalbyDay$totalSteps,
                         breaks = 10, 
-                        main='Total Steps per Day', 
+                        main='Histogram Total Steps per Day', 
                         xlim=c(0,25000),
                         ylim=c(0,20),
                         col='cornsilk', 
-                        xlab='Step', 
+                        xlab='Steps', 
                         ylab='Frequency'
                    )
 
-text(h$mids,h$counts,labels=h$counts, adj=c(0.5, -0.5))
+text(h1$mids,h1$counts,labels=h1$counts, adj=c(0.5, -0.5))
 
 
 ```
 
 
 ```{r}
-mean_totalsteps = mean(dfTotalbyDay$x, na.rm = TRUE )
-median_totalsteps = median(dfTotalbyDay$x, na.rm = TRUE )
+mean_totalsteps = mean(dfTotalbyDay$totalSteps, na.rm = TRUE )
+median_totalsteps = median(dfTotalbyDay$totalSteps, na.rm = TRUE )
 
 sprintf("Mean total steps: %s", format(mean_totalsteps,big.mark=",",scientific=FALSE))
 sprintf("Median total steps: %s", format(median_totalsteps,big.mark=",",scientific=FALSE))
@@ -96,20 +103,25 @@ dfReplacement <- setNames( aggregate(dfActivity$steps,
                                      FUN=mean,
                                      na.rm=TRUE),
                            c("interval", "aveSteps"))
+print(dfReplacement)
+
 
 # Create a new dataframe and replace NA values
 dfActivityNoNA <- dfActivity
+dfActivityNoNA$oldValue <- dfActivityNoNA$steps
 
 sprintf("Number of NA Before:  %d", sum(is.na(dfActivityNoNA$steps)))
 
 for(i in 1:nrow(dfActivityNoNA)) {       # for-loop over rows
-     if (is.na(dfActivityNoNA[i, 1])) {  # if step value a row i is NA
+     if (is.na(dfActivityNoNA[i, 1])) {  # if step value for row i is NA
           # Replacement value is the aveSteps in dfReplacement 
           # for the interval value found in DfActivityNoNA
           replacement_value <- dfReplacement[dfReplacement$interval == dfActivityNoNA[i,3], 2]
           dfActivityNoNA[i,1] <- replacement_value
-     }
+          #dfActivityNoNA[i,1] <- 0
+          replacement_value     }
 }
+print(dfActivityNoNA)
 sprintf("Number of NA After:  %d", sum(is.na(dfActivityNoNA$steps)))
 
 ```
@@ -119,9 +131,16 @@ Make a histogram of the total number of steps taken each day and Calculate and r
 
 ```{r}
 
-dfTotalbyDayNoNA = aggregate(dfActivityNoNA$steps, by=list(dfActivityNoNA$date), FUN=sum)
+dfTotalbyDayNoNA = setNames(aggregate(dfActivityNoNA$steps, by=list(dfActivityNoNA$date), FUN=sum),
+                            c("date", "totalSteps")
+                            )
+print(dfTotalbyDayNoNA)
+sprintf("Total steps: %f.2, Number days not NA: %d", sum(dfTotalbyDayNoNA$totalSteps), 
+                                                   sum(!is.na(dfTotalbyDayNoNA$totalSteps)))
 
-h2 <- hist(dfTotalbyDayNoNA$x,
+
+
+h2 <- hist(dfTotalbyDayNoNA$totalSteps,
                             breaks = 10, 
                             main='Total Steps per Day with Imputed Missing Values', 
                             xlim=c(0,25000),
@@ -134,17 +153,54 @@ h2 <- hist(dfTotalbyDayNoNA$x,
 text(h2$mids,h2$counts,labels=h2$counts, adj=c(0.5, -0.5))
 
 
-mean_totalstepsNoNA = mean(dfTotalbyDayNoNA$x)
-median_totalstepsNoNA = median(dfTotalbyDayNoNA$x)
+mean_totalstepsNoNA = mean(dfTotalbyDayNoNA$totalSteps)
+median_totalstepsNoNA = median(dfTotalbyDayNoNA$totalSteps)
 
 sprintf("Mean total steps (with imputed missing values): %s", 
             format(mean_totalstepsNoNA,big.mark=",",scientific=FALSE))
 sprintf("Median total steps (with imputed missing values): %s", 
             format(median_totalstepsNoNA,big.mark=",",scientific=FALSE))
+```
+
+## Are there differences in activity patterns between weekdays and weekends?
+
+
+Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
+Make a panel plot containing a time series plot (i.e. \color{red}{\verb|type = "l"|}type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See the README file in the GitHub repository to see an example of what this plot should look like using simulated data.
+
+
+```{r}
+
+dfActivityNoNA$asDate <- as.Date(dfActivityNoNA$date)
+dfActivityNoNA$day <- "weekday"
+for(i in 1:nrow(dfActivityNoNA)) {       # for-loop over rows
+     if (grepl("S(at|un)", weekdays(dfActivityNoNA[i, 5]))) {
+         dfActivityNoNA[i, 'day'] <- "weekend"
+     }
+}
+dfActivityNoNA$day <- as.factor(dfActivityNoNA$day)
+
+summary(dfActivityNoNA)
+
+
+dfDayActivity = setNames(aggregate(dfActivityNoNA$steps, 
+                              by=list(dfActivityNoNA$interval, dfActivityNoNA$day), 
+                              FUN=mean,
+                              na.rm=TRUE),
+                         c("interval", "day", "aveSteps"))
+
+par(mfrow=c(1,2))        
+
+df1 = X$weekend[ ,c(1,3)]
+df2 = X$weekday[ ,c(1,3)]
+
+plot(df1, type = "l")  # Plot with Base R
+plot(df2, type = "l")  # Plot with Base R
+
+#plot(dfDayActivity$Group.1, dfDailyActivity$x, type='l')
 
 ```
 
 
 
 
-## Are there differences in activity patterns between weekdays and weekends?
