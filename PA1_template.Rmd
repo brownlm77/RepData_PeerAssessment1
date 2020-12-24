@@ -251,7 +251,7 @@ closer to the mean when replacing the missing values.
 dfActivityNoNA$asDate <- as.Date(dfActivityNoNA$date)
 dfActivityNoNA$weekflag <- "weekday"
 
-print(head(dfActivityNoNA))
+print(head(dfActivityNoNA))  #REMOVE
 
 # Loop over the rows and if day is a weekend, then 
 # change the 'week' value to weekend
@@ -272,7 +272,7 @@ dfActivityNoNA$weekflag <- as.factor(dfActivityNoNA$weekflag)
 # aggregating by interval and weekflag 
 
 dfDayActivity = setNames(aggregate(dfActivityNoNA$steps, 
-                                   by=list(dfActivityNoNA$interval, dfActivityNoNA$weekflag), 
+                                   by=list(dfActivityNoNA$interval, dfActivityNoNA$weekflag),
                                    FUN=mean),
                          c("interval", "weekflag", "aveSteps"))
 
@@ -308,4 +308,6 @@ ggplot(dfDayActivity, aes(x=interval, y=aveSteps, fill=weekflag)) +
 
 ```
 
-The result show .....
+The results show, looking at the two graphs, that individuals are more active 
+during the middle of the day on a weekend, relative to same time of day 
+during the week. 
